@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ededed;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  padding-top: 60px;
+  overflow-x: hidden;
+  @apply text-black;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.ProseMirror:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  margin-left: 1.25rem;
+  padding-left: 1rem;
+}
+.ProseMirror li {
+  margin-bottom: 0.25rem;
+}
+
+.company-description ul {
+  list-style-type: disc;
+  margin-left: 1.25rem;
+  padding-left: 1rem;
+}
+.company-description li {
+  margin-bottom: 0.25rem;
+}
+
+.company-description p {
+  margin-block-start: 1rem;
+  margin-block-end: 1rem;
+}
+
+.company-description * {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background-color: #bdcdd6;
+  border-radius: 8px;
+}

@@ -1,0 +1,352 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                  String             @id @default(uuid())
+  name                String
+  email               String             @unique
+  phone               String?
+  password            String?
+  role                Role               @default(USER)
+  isVerified          Boolean            @default(false)
+  verificationToken   String?
+  createdAt           DateTime           @default(now())
+  lastLogin           DateTime?
+  resetToken          String?
+  resetTokenExpiry    DateTime?
+  socialLoginProvider String?
+
+  profile             Profile?
+  company             Company?
+  applications        Application[]
+  subscriptions       Subscription[]
+  assessments         UserAssessment[]
+  reviews             CompanyReview[]
+  certificates        Certificate[]
+  assessmentsCreated  SkillAssessment[]  @relation("AssessmentDeveloper")
+  interviewSchedules  InterviewSchedule[]
+  savedJobs           SavedJob[]
+  preSelectionAnswers PreSelectionAnswer[]
+  verificationTokens  VerificationToken[]
+  resetTokens         PasswordResetToken[]
+}
+
+model Profile {
+  id         String     @id @default(uuid())
+  birthDate  DateTime
+  gender     String
+  education  String
+  address    String
+  photoUrl   String?
+  bannerUrl  String?     
+  resumeUrl  String?
+  skills     String[]
+  about      String?
+
+  user       User         @relation(fields: [userId], references: [id])
+  userId     String       @unique
+  experiences Experience[]  
+}
+
+model Experience {
+  id               String         @id @default(uuid())
+  title            String
+  employmentType   EmploymentType?
+  companyName      String
+  currentlyWorking Boolean        @default(false)
+  startDate        DateTime
+  endDate          DateTime?
+  location         String?
+  locationType     LocationType?
+  description      String?
+
+  profile          Profile        @relation(fields: [profileId], references: [id])
+  profileId        String
+
+  @@index([profileId])
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  description String
+  location    String
+  logo        String?
+  bannerUrl   String?    
+  website     String?
+  industry    String?
+  foundedYear Int?
+
+  admin        User     @relation(fields: [adminId], references: [id])
+  adminId      String   @unique
+  jobs         Job[]
+  reviews      CompanyReview[]
+}
+
+model Job {
+  id               String              @id @default(uuid())
+  title            String
+  description      String
+  location         String
+  salary           Int?
+  status           JobStatus           @default(DRAFT)
+  deadline         DateTime
+  isRemote         Boolean             @default(false)
+  experienceLevel  String
+  jobType          String?
+  employmentType   EmploymentType @default(OTHER)
+  jobCategory      JobCategory @default(OTHER)
+  tags             String[]
+  bannerUrl        String?
+  hasTest          Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  latitude         Float?
+  longitude        Float?
+  company          Company             @relation(fields: [companyId], references: [id])
+  companyId        String
+  applications     Application[]
+  interviews       InterviewSchedule[]
+  savedBy          SavedJob[]
+  preSelectionTest PreSelectionTest?
+}
+
+model Application {
+  id             String              @id @default(uuid())
+  expectedSalary Int
+  status         ApplicationStatus   @default(PENDING)
+  cvFile         String
+  coverLetter    String?
+  createdAt      DateTime            @default(now())
+  testScore      Int?
+  feedback       String?
+
+  user           User                @relation(fields: [userId], references: [id])
+  userId         String
+  job            Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId          String
+}
+
+model InterviewSchedule {
+  id           String           @id @default(uuid())
+  dateTime     DateTime
+  location     String?
+  notes        String?
+  status       InterviewStatus  @default(SCHEDULED)
+  reminderSent Boolean          @default(false)
+
+  job          Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId        String
+  user         User             @relation(fields: [userId], references: [id])
+  userId       String
+}
+
+model Subscription {
+  id            String         @id @default(uuid())
+  type          SubscriptionType
+  startDate     DateTime
+  endDate       DateTime
+  paymentStatus PaymentStatus  @default(PENDING)
+  paymentMethod String?
+  paymentProof  String?
+  amount        Float
+  isApproved    Boolean        @default(false)
+
+  user          User           @relation(fields: [userId], references: [id])
+  userId        String
+}
+
+model SkillAssessment {
+  id              String           @id @default(uuid())
+  name            String
+  description     String?
+  questions       Json
+  passingScore    Int              @default(75)
+  timeLimit       Int              @default(30)
+  badgeImage      String?
+  isActive        Boolean          @default(true)
+
+  developer       User             @relation("AssessmentDeveloper", fields: [developerId], references: [id])
+  developerId     String
+  userAssessments UserAssessment[]
+  certificates    Certificate[]
+}
+
+model UserAssessment {
+  id             String   @id @default(uuid())
+  score          Int
+  passed         Boolean
+  badge          String
+  createdAt      DateTime @default(now())
+  timeTaken      Int?
+  answers        Json?
+
+  user           User             @relation(fields: [userId], references: [id])
+  userId         String
+  assessment     SkillAssessment  @relation(fields: [assessmentId], references: [id])
+  assessmentId   String
+}
+
+model CompanyReview {
+  id             String   @id @default(uuid())
+  rating         Int
+  salaryEstimate Int
+  content        String
+  position       String
+  isAnonymous    Boolean   @default(true)
+  cultureRating  Int?
+  workLifeRating Int?
+  careerRating   Int?
+  isVerified     Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+  company        Company  @relation(fields: [companyId], references: [id])
+  companyId      String
+}
+
+model Certificate {
+  id               String   @id @default(uuid())
+  certificateUrl   String
+  verificationCode String
+  issuedAt         DateTime @default(now())
+  expiresAt        DateTime?
+  qrCodeUrl        String?
+
+  user             User             @relation(fields: [userId], references: [id])
+  userId           String
+  assessment       SkillAssessment  @relation(fields: [assessmentId], references: [id])
+  assessmentId     String
+}
+
+model SavedJob {
+  id        String   @id @default(uuid())
+  savedAt   DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId     String
+
+  @@unique([userId, jobId])
+}
+
+model PreSelectionTest {
+  id        String   @id @default(uuid())
+  questions Json
+  createdAt DateTime @default(now())
+
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId     String   @unique
+  answers   PreSelectionAnswer[]
+}
+
+model PreSelectionAnswer {
+  id        String   @id @default(uuid())
+  score     Int
+  passed    Boolean
+  answers   Json
+  createdAt DateTime @default(now())
+
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  test      PreSelectionTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testId    String
+
+  @@unique([userId, testId])
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @unique 
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// Enums
+
+enum Role {
+  USER
+  ADMIN
+  DEVELOPER
+}
+
+enum SubscriptionType {
+  STANDARD
+  PROFESSIONAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  INTERVIEW
+  ACCEPTED
+  REJECTED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  TEMPORARY
+  VOLUNTEER
+  OTHER
+}
+
+enum LocationType {
+  REMOTE
+  ON_SITE
+  HYBRID
+}
+
+enum JobCategory {
+  FRONTEND_DEVELOPER
+  BACKEND_DEVELOPER
+  FULL_STACK_DEVELOPER
+  MOBILE_APP_DEVELOPER
+  DEVOPS_ENGINEER
+  GAME_DEVELOPER
+  SOFTWARE_ENGINEER
+  DATA_ENGINEER
+  SECURITY_ENGINEER
+  OTHER
+}
